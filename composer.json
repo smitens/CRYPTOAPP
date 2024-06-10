@@ -1,0 +1,14 @@
+{
+    "require": {
+        "guzzlehttp/guzzle": "^7.8",
+        "nesbot/carbon": "^2.72",
+        "symfony/console": "^5.4",
+        "ext-json": "*",
+        "ext-readline": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "CryptoApp\\App\\": "app/"
+        }
+    }
+}
