@@ -20,7 +20,8 @@ class JsonTransactionsService implements DataServiceInterface
 
     private function loadTransactions(): array
     {
-        if (file_exists($this->transactionsFile)) {
+        try {
+            if (file_exists($this->transactionsFile)) {
             $jsonData = file_get_contents($this->transactionsFile);
             $transactions = json_decode($jsonData, true);
 
@@ -29,23 +30,34 @@ class JsonTransactionsService implements DataServiceInterface
                     return Transaction::fromArray($transactionData);
                 }, $transactions);
             }
+            }
+        } catch (\Exception $e) {
+            echo "Error loading transactions: " . $e->getMessage();
         }
         return [];
     }
 
     private function saveTransactions(): void
     {
-        $serializedTransactions = array_map(function ($transaction) {
+        try {
+            $serializedTransactions = array_map(function ($transaction) {
             return $transaction->jsonSerialize();
-        }, $this->transactions);
+            }, $this->transactions);
 
-        file_put_contents($this->transactionsFile, json_encode($serializedTransactions, JSON_PRETTY_PRINT));
+            file_put_contents($this->transactionsFile, json_encode($serializedTransactions, JSON_PRETTY_PRINT));
+        } catch (\Exception $e) {
+            echo "Error loading transactions: " . $e->getMessage();
+        }
     }
 
     public function addTransaction(Transaction $transaction): void
     {
-        $this->transactions[] = $transaction;
-        $this->saveTransactions();
+        try {
+            $this->transactions[] = $transaction;
+            $this->saveTransactions();
+        } catch (\Exception $e) {
+            echo "Error loading transactions: " . $e->getMessage();
+        }
     }
 
     public function buy(string $symbol, float $amount): void

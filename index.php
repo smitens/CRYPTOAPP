@@ -6,6 +6,7 @@ use CryptoApp\App\CoinMarketApi;
 use CryptoApp\App\CoinGeckoApi;
 use CryptoApp\App\CoinPaprikaApi;
 use CryptoApp\App\JsonTransactionsService;
+use CryptoApp\App\SqliteTransactionsService;
 use CryptoApp\App\Wallet;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\ConsoleOutput;
@@ -25,7 +26,7 @@ $storageChoice = trim(fgets(STDIN));
 if ($storageChoice == 1) {
     $transactions = new JsonTransactionsService('transactions.json', $api);
 } elseif ($storageChoice == 2) {
-    echo "in progress...\n";
+    $transactions = new SqliteTransactionsService('storage/database.sqlite', $api);
 } else {
     exit("Invalid choice.\n");
 }
