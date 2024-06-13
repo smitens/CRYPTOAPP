@@ -6,13 +6,13 @@ use Carbon\Carbon;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
-class Transactions
+class JsonTransactionsService implements DataServiceInterface
 {
     private string $transactionsFile;
     private array $transactions;
-    private ?ApiToData $api;
+    private ?ApiClientInterface $api;
 
-    public function __construct(string $transactionsFile = 'transactions.json', ?ApiToData $api = null) {
+    public function __construct(string $transactionsFile = 'transactions.json', ?ApiClientInterface $api = null) {
         $this->transactionsFile = $transactionsFile;
         $this->api = $api;
         $this->transactions = $this->loadTransactions();
@@ -25,21 +25,24 @@ class Transactions
             $transactions = json_decode($jsonData, true);
 
             if (is_array($transactions)) {
-                return $transactions;
-            } else {
-                return [];
+                return array_map(function ($transactionData) {
+                    return Transaction::fromArray($transactionData);
+                }, $transactions);
             }
-        } else {
-            return [];
         }
+        return [];
     }
 
     private function saveTransactions(): void
     {
-        file_put_contents($this->transactionsFile, json_encode($this->transactions, JSON_PRETTY_PRINT));
+        $serializedTransactions = array_map(function ($transaction) {
+            return $transaction->jsonSerialize();
+        }, $this->transactions);
+
+        file_put_contents($this->transactionsFile, json_encode($serializedTransactions, JSON_PRETTY_PRINT));
     }
 
-    public function addTransaction(array $transaction): void
+    public function addTransaction(Transaction $transaction): void
     {
         $this->transactions[] = $transaction;
         $this->saveTransactions();
@@ -49,15 +52,8 @@ class Transactions
     {
         try {
             $cryptoData = $this->api->searchCryptoCurrencies($symbol);
-            $price = $cryptoData[$symbol]['quote']['USD']['price'];
-
-            $transaction = [
-                'type' => 'buy',
-                'symbol' => $symbol,
-                'amount' => $amount,
-                'price' => $price,
-                'timestamp' => time(),
-            ];
+            $price = $cryptoData->getPrice();
+            $transaction = new Transaction('buy', $symbol, $amount, $price, time());
             $this->addTransaction($transaction);
         } catch (\Exception $e) {
             echo "Error: " . $e->getMessage();
@@ -68,15 +64,8 @@ class Transactions
     {
         try {
             $cryptoData = $this->api->searchCryptoCurrencies($symbol);
-            $price = $cryptoData[$symbol]['quote']['USD']['price'];
-
-            $transaction = [
-                'type' => 'sell',
-                'symbol' => $symbol,
-                'amount' => $amount,
-                'price' => $price,
-                'timestamp' => time(),
-            ];
+            $price = $cryptoData->getPrice();
+            $transaction = new Transaction('sell', $symbol, $amount, $price, time());
             $this->addTransaction($transaction);
         } catch (\Exception $e) {
             echo "Error: " . $e->getMessage();
@@ -88,6 +77,11 @@ class Transactions
         return $this->transactions;
     }
 
+    public function getApi(): ?ApiClientInterface
+    {
+        return $this->api;
+    }
+
     public function displayTransactions(): void
     {
         $output = new ConsoleOutput();
@@ -96,11 +90,11 @@ class Transactions
 
         foreach ($this->transactions as $transaction) {
             $table->addRow([
-                $transaction['type'],
-                $transaction['symbol'],
-                $transaction['amount'],
-                number_format($transaction['price'], 8),
-                Carbon::createFromTimestamp($transaction['timestamp'])->format('Y-m-d H:i:s'),
+                $transaction->getType(),
+                $transaction->getSymbol(),
+                $transaction->getAmount(),
+                number_format($transaction->getPrice(), 8),
+                Carbon::createFromTimestamp($transaction->getTimestamp())->format('Y-m-d H:i:s'),
             ]);
         }
         $table->render();

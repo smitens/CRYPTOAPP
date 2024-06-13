@@ -1,23 +1,30 @@
 [
     {
         "type": "buy",
-        "symbol": "BIT",
-        "amount": 2,
-        "price": 3.528500781170078e-6,
-        "timestamp": 1717956644
+        "symbol": "DOGE",
+        "amount": 10,
+        "price": 0.1432472824038463,
+        "timestamp": 1718260487
     },
     {
         "type": "sell",
-        "symbol": "BIT",
-        "amount": 1,
-        "price": 3.528500781170078e-6,
-        "timestamp": 1717956660
+        "symbol": "DOGE",
+        "amount": 9,
+        "price": 0.1432472824038463,
+        "timestamp": 1718260532
     },
     {
         "type": "buy",
-        "symbol": "TON",
+        "symbol": "DOGE",
+        "amount": 10,
+        "price": 0.14375567547504894,
+        "timestamp": 1718264478
+    },
+    {
+        "type": "sell",
+        "symbol": "DOGE",
         "amount": 1,
-        "price": 7.10474870253728,
-        "timestamp": 1718013701
+        "price": 0.14375567547504894,
+        "timestamp": 1718264737
     }
 ]

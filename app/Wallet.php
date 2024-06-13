@@ -7,9 +7,9 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 class Wallet
 {
     private float $balance;
-    private Transactions $transactions;
+    private DataServiceInterface $transactions;
 
-    public function __construct(float $initialBalance, Transactions $transactions)
+    public function __construct(float $initialBalance, DataServiceInterface $transactions)
     {
         $this->balance = $initialBalance;
         $this->transactions = $transactions;
@@ -21,17 +21,17 @@ class Wallet
         $balance = $this->balance;
 
         foreach ($this->transactions->getTransactions() as $transaction) {
-            $symbol = $transaction['symbol'];
-            $amount = $transaction['amount'];
-            $total = $transaction['price'] * $amount;
+            $symbol = strtoupper($transaction->getSymbol());
+            $amount = $transaction->getAmount();
+            $total = $transaction->getPrice() * $amount;
 
-            if ($transaction['type'] === 'buy') {
+            if ($transaction->getType() === 'buy') {
                 $balance -= $total;
                 if (!isset($state[$symbol])) {
                     $state[$symbol] = 0;
                 }
                 $state[$symbol] += $amount;
-            } elseif ($transaction['type'] === 'sell') {
+            } elseif ($transaction->getType() === 'sell') {
                 $balance += $total;
                 if (!isset($state[$symbol])) {
                     $state[$symbol] = 0;
