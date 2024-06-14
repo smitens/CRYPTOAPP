@@ -89,7 +89,7 @@ class CoinMarketApi implements ApiClientInterface
             if ($response->getStatusCode() === 200) {
                 $coinDetail = $data['data'][$symbol];
                 return new Currency(
-                    $coinDetail ['cmc_rank'],
+                    $coinDetail ['cmc_rank'] ?? null,
                     $coinDetail['name'],
                     $coinDetail['symbol'],
                     $coinDetail['quote']['USD']['price']

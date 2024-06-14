@@ -12,10 +12,26 @@ use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Dotenv\Dotenv;
 
+
 $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
-$apiKey = $_ENV['APIKEY'];
-$api = new CoinPaprikaApi();
+
+echo "Choose data source:\n";
+echo "1. CoinMarketCap\n";
+echo "2. CoinPaprika\n";
+echo "3. CoinGecko\n";
+echo "Enter the number of your choice: ";
+$dataChoice = trim(fgets(STDIN));
+if ($dataChoice == 1 ) {
+    $apiKey = $_ENV['APIKEY'];
+    $api = new CoinMarketApi($apiKey);
+} elseif ($dataChoice == 2) {
+    $api = new CoinPaprikaApi();
+} elseif ($dataChoice == 3) {
+    $api = new CoinGeckoApi();
+} else {
+    exit("Invalid choice.\n");
+}
 
 echo "Choose storage type:\n";
 echo "1. JSON File\n";
@@ -70,7 +86,7 @@ while (true) {
 
         case 2:
             try {
-            $symbol = trim(readline("Enter the symbol: "));
+            $symbol = strtoupper(trim(readline("Enter the symbol: ")));
             $currencyInfo = $api->searchCryptoCurrencies($symbol);
             echo "Currency Name: " . $currencyInfo->getName() . "\n";
             echo "Currency Symbol: " . $currencyInfo->getSymbol() . "\n";
@@ -82,7 +98,7 @@ while (true) {
             break;
 
         case 3:
-            $symbol = trim(readline("Enter the symbol to buy: "));
+            $symbol = strtoupper(trim(readline("Enter the symbol to buy: ")));
             $amount = floatval(trim(readline("Enter the amount to buy: ")));
             $balance = $wallet->getBalance();
             $cryptoData = $api->searchCryptoCurrencies($symbol);
@@ -96,7 +112,7 @@ while (true) {
             break;
 
         case 4:
-            $symbol = trim(readline("Enter the symbol to sell: "));
+            $symbol = strtoupper(trim(readline("Enter the symbol to sell: ")));
             $amount = floatval(trim(readline("Enter the amount to sell: ")));
             $transactions->sell($symbol, $amount);
             break;
