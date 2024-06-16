@@ -1,8 +1,10 @@
 <?php
 
-namespace CryptoApp\App;
+namespace CryptoApp\Models;
 
-class Transaction implements \JsonSerializable
+use JsonSerializable;
+
+class Transaction implements JsonSerializable
 {
     private string $type;
     private string $symbol;
@@ -10,7 +12,13 @@ class Transaction implements \JsonSerializable
     private float $price;
     private int $timestamp;
 
-    public function __construct(string $type, string $symbol, float $amount, float $price, int $timestamp)
+    public function __construct(
+        string $type,
+        string $symbol,
+        float $amount,
+        float $price,
+        int $timestamp
+    )
     {
         $this->type = $type;
         $this->symbol = strtoupper($symbol);

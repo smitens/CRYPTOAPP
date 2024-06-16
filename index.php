@@ -2,52 +2,25 @@
 
 require_once 'vendor/autoload.php';
 
-use CryptoApp\App\CoinMarketApi;
-use CryptoApp\App\CoinGeckoApi;
-use CryptoApp\App\CoinPaprikaApi;
-use CryptoApp\App\JsonTransactionsService;
-use CryptoApp\App\SqliteTransactionsService;
-use CryptoApp\App\Wallet;
+use CryptoApp\Api\CoinMarketApi;
+use CryptoApp\Api\CoinGeckoApi;
+use CryptoApp\Api\CoinPaprikaApi;
+use CryptoApp\Services\BuyCurrencyService;
+use CryptoApp\Services\SellCurrencyService;
+use CryptoApp\Database\SqliteDatabase;
+use CryptoApp\Wallet;
+use Dotenv\Dotenv;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\ConsoleOutput;
-use Dotenv\Dotenv;
-
+use Carbon\Carbon;
 
 $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
+$apiKey = $_ENV['APIKEY'];
+$api = new CoinMarketApi($apiKey);
+$database = new SqliteDatabase();
 
-echo "Choose data source:\n";
-echo "1. CoinMarketCap\n";
-echo "2. CoinPaprika\n";
-echo "3. CoinGecko\n";
-echo "Enter the number of your choice: ";
-$dataChoice = trim(fgets(STDIN));
-if ($dataChoice == 1 ) {
-    $apiKey = $_ENV['APIKEY'];
-    $api = new CoinMarketApi($apiKey);
-} elseif ($dataChoice == 2) {
-    $api = new CoinPaprikaApi();
-} elseif ($dataChoice == 3) {
-    $api = new CoinGeckoApi();
-} else {
-    exit("Invalid choice.\n");
-}
-
-echo "Choose storage type:\n";
-echo "1. JSON File\n";
-echo "2. SQLite Database\n";
-echo "Enter the number of your choice: ";
-$storageChoice = trim(fgets(STDIN));
-
-if ($storageChoice == 1) {
-    $transactions = new JsonTransactionsService('transactions.json', $api);
-} elseif ($storageChoice == 2) {
-    $transactions = new SqliteTransactionsService('storage/database.sqlite', $api);
-} else {
-    exit("Invalid choice.\n");
-}
-
-$wallet = new Wallet(1000, $transactions);
+$wallet = new Wallet(1000, $database);
 
 while (true) {
     echo "\n\033[1m\033[4mCRYPTO CURRENCY APP\033[0m\n\n";
@@ -79,7 +52,7 @@ while (true) {
                     ]);
                 }
             $table->render();
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 echo "An error occurred: " . $e->getMessage() . "\n";
             }
             break;
@@ -92,7 +65,7 @@ while (true) {
             echo "Currency Symbol: " . $currencyInfo->getSymbol() . "\n";
             echo "Current Price (USD): " . number_format($currencyInfo->getPrice(), 8) .
                 "\n";
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 echo "An error occurred: " . $e->getMessage() . "\n";
             }
             break;
@@ -105,7 +78,13 @@ while (true) {
             $price = $cryptoData->getPrice();
             $totalCost = $price * $amount;
             if ($balance >= $totalCost) {
-                $transactions->buy($symbol, $amount);
+
+                $service = (new BuyCurrencyService(
+                    $api,
+                    $database
+                ));
+                $service->execute($symbol, $amount);
+                echo "Thank You! You just bought $amount $symbol!\n";
             } else {
                 echo "\033[31mInsufficient balance. Please try again with a lower amount.\033[0m\n";
             }
@@ -114,11 +93,30 @@ while (true) {
         case 4:
             $symbol = strtoupper(trim(readline("Enter the symbol to sell: ")));
             $amount = floatval(trim(readline("Enter the amount to sell: ")));
-            $transactions->sell($symbol, $amount);
+
+            $service = (new SellCurrencyService(
+                $api,
+                $database
+            ));
+            $service->execute($symbol, $amount);
+            echo "Thank You! You just sold $amount $symbol!\n";
             break;
 
         case 5:
-            $transactions->displayTransactions();
+            $output = new ConsoleOutput();
+            $table = new Table($output);
+            $table->setHeaders(['Type', 'Symbol', 'Amount', 'Price', 'Timestamp']);
+
+            foreach ($database->getAll() as $transaction) {
+                $table->addRow([
+                    $transaction->getType(),
+                    $transaction->getSymbol(),
+                    $transaction->getAmount(),
+                    number_format($transaction->getPrice(), 8),
+                    Carbon::createFromTimestamp($transaction->getTimestamp())->format('Y-m-d H:i:s'),
+                ]);
+            }
+            $table->render();
             break;
 
         case 6:

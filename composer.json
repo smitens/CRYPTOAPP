@@ -10,7 +10,7 @@
     },
     "autoload": {
         "psr-4": {
-            "CryptoApp\\App\\": "app/"
+            "CryptoApp\\": "app/"
         }
     }
 }

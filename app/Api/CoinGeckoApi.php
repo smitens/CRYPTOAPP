@@ -1,7 +1,9 @@
 <?php
-namespace CryptoApp\App;
-require 'vendor/autoload.php';
 
+namespace CryptoApp\Api;
+
+use CryptoApp\Exceptions\HttpFailedRequestException;
+use CryptoApp\Models\Currency;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 
@@ -30,25 +32,27 @@ class CoinGeckoApi implements ApiClientInterface
 
             $data = json_decode($response->getBody(), true);
 
-            if ($response->getStatusCode() === 200) {
+            if ($response->getStatusCode() !== 200) {
+                    throw new HttpFailedRequestException(
+                        'Failed to get data from CoinGecko. Status Code: ' . $response->getStatusCode());
+                }
                 $result = [];
 
                 foreach ($data as $coin) {
                     $currency = new Currency(
-                        $coin['market_cap_rank'] ?? null,
                         $coin['name'],
                         $coin['symbol'],
                         $coin['current_price'],
+                        $coin['market_cap_rank'] ?? null,
                     );
                     $result[] = $currency;
                 }
 
                 return $result;
-            } else {
-                throw new \Exception('Failed to get data from CoinGecko. Status Code: ' . $response->getStatusCode());
-            }
+
         } catch (GuzzleException $e) {
-            throw new \Exception('Failed to make HTTP request: ' . $e->getMessage());
+            throw new HttpFailedRequestException(
+                'Failed to make HTTP request: ' . $e->getMessage());
         }
     }
 
@@ -64,6 +68,9 @@ class CoinGeckoApi implements ApiClientInterface
             $coinsList = json_decode($response->getBody(), true);
 
             if ($response->getStatusCode() === 200) {
+                throw new HttpFailedRequestException(
+                    'Failed to get currency list from CoinGecko. Status Code: ' . $response->getStatusCode());
+            }
                 $coinId = null;
 
                 foreach ($coinsList as $coin) {
@@ -86,23 +93,22 @@ class CoinGeckoApi implements ApiClientInterface
                 $coinData = json_decode($coinResponse->getBody(), true);
 
 
-                if ($coinResponse->getStatusCode() === 200) {
+                if ($coinResponse->getStatusCode() !== 200) {
+                    throw new HttpFailedRequestException(
+                        'Failed to get data from CoinGecko. Status Code: ' . $coinResponse->getStatusCode());
+                }
                     $coinInfo = $coinData['market_data'];
 
-                    $rank = $coinData['market_cap_rank'] ?? null;
-                    $name = $coinData['name'];
-                    $symbol = $coinData['symbol'];
-                    $price = $coinInfo['current_price']['usd'];
+                    return new Currency(
+                        $coinData['name'],
+                        $coinData['symbol'],
+                        $coinInfo['current_price']['usd'],
+                        $$coinData['market_cap_rank'] ?? null
+                    );
 
-                    return new Currency($rank, $name, $symbol, $price);
-                } else {
-                    throw new \Exception('Failed to get data from CoinGecko. Status Code: ' . $coinResponse->getStatusCode());
-                }
-            } else {
-                throw new \Exception('Failed to get currency list from CoinGecko. Status Code: ' . $response->getStatusCode());
-            }
         } catch (GuzzleException $e) {
-            throw new \Exception('Failed to make HTTP request: ' . $e->getMessage());
+            throw new HttpFailedRequestException(
+                'Failed to make HTTP request: ' . $e->getMessage());
         }
     }
 }

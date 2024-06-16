@@ -1,7 +1,9 @@
 <?php
-namespace CryptoApp\App;
-require 'vendor/autoload.php';
 
+namespace CryptoApp\Api;
+
+use CryptoApp\Exceptions\HttpFailedRequestException;
+use CryptoApp\Models\Currency;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 
@@ -35,7 +37,10 @@ class CoinMarketApi implements ApiClientInterface
 
             $data = json_decode($response->getBody(), true);
 
-            if ($response->getStatusCode() === 200) {
+            if ($response->getStatusCode() !== 200) {
+                throw new HttpFailedRequestException(
+                    'Failed to get data from CoinMarketCap. Status Code: ' . $response->getStatusCode());
+            }
                 $topCoins = $data['data'];
                 $result = [];
 
@@ -54,20 +59,18 @@ class CoinMarketApi implements ApiClientInterface
                     $coinDetail = $coinDetails['data'][$coin['symbol']];
 
                     $currency = new Currency(
-                        $coin['cmc_rank'],
                         $coin['name'],
                         $coin['symbol'],
                         $coinDetail['quote']['USD']['price'],
+                        $coin['cmc_rank'],
                     );
                     $result[] = $currency;
                 }
 
                 return $result;
-            } else {
-                throw new \Exception('Failed to get data from CoinMarketCap. Status Code: ' . $response->getStatusCode());
-            }
+
         } catch (GuzzleException $e) {
-            throw new \Exception('Failed to make HTTP request: ' . $e->getMessage());
+            throw new HttpFailedRequestException('Failed to make HTTP request: ' . $e->getMessage());
         }
     }
 
@@ -86,19 +89,21 @@ class CoinMarketApi implements ApiClientInterface
 
             $data = json_decode($response->getBody(), true);
 
-            if ($response->getStatusCode() === 200) {
+            if ($response->getStatusCode() !== 200) {
+                throw new HttpFailedRequestException(
+                    'Failed to get data from CoinMarketCap. Status Code: ' . $response->getStatusCode());
+            }
                 $coinDetail = $data['data'][$symbol];
                 return new Currency(
-                    $coinDetail ['cmc_rank'] ?? null,
                     $coinDetail['name'],
                     $coinDetail['symbol'],
-                    $coinDetail['quote']['USD']['price']
+                    $coinDetail['quote']['USD']['price'],
+                    $coinDetail ['cmc_rank'] ?? null,
                 );
-            } else {
-                throw new \Exception('Failed to get data from CoinMarketCap. Status Code: ' . $response->getStatusCode());
-            }
+
         } catch (GuzzleException $e) {
-            throw new \Exception('Failed to make HTTP request: ' . $e->getMessage());
+            throw new HttpFailedRequestException(
+                'Failed to make HTTP request: ' . $e->getMessage());
         }
     }
 }

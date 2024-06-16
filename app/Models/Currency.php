@@ -1,24 +1,24 @@
 <?php
-namespace CryptoApp\App;
+namespace CryptoApp\Models;
 
 class Currency
 {
-    private ?int $rank;
     private string $name;
     private string $symbol;
     private float $price;
+    private ?int $rank;
 
-    public function __construct(?int $rank = null, string $name, string $symbol, float $price)
+    public function __construct(
+        string $name,
+        string $symbol,
+        float $price,
+        ?int $rank = null
+    )
     {
-        $this->rank = $rank;
         $this->name = $name;
         $this->symbol = $symbol;
         $this->price = $price;
-    }
-
-    public function getRank(): ?int
-    {
-        return $this->rank;
+        $this->rank = $rank;
     }
 
     public function getName(): string
@@ -34,5 +34,10 @@ class Currency
     public function getPrice(): float
     {
         return $this->price;
+    }
+
+    public function getRank(): ?int
+    {
+        return $this->rank;
     }
 }

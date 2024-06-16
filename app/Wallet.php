@@ -1,18 +1,23 @@
 <?php
-namespace CryptoApp\App;
 
+namespace CryptoApp;
+
+use CryptoApp\Database\DatabaseInterface;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
 class Wallet
 {
     private float $balance;
-    private DataServiceInterface $transactions;
+    private DatabaseInterface $database;
 
-    public function __construct(float $initialBalance, DataServiceInterface $transactions)
+    public function __construct(
+        float $initialBalance,
+        DatabaseInterface $database
+    )
     {
         $this->balance = $initialBalance;
-        $this->transactions = $transactions;
+        $this->database = $database;
     }
 
     public function calculateWalletState(): array
@@ -20,7 +25,7 @@ class Wallet
         $state = [];
         $balance = $this->balance;
 
-        foreach ($this->transactions->getTransactions() as $transaction) {
+        foreach ($this->database->getAll() as $transaction) {
             $symbol = strtoupper($transaction->getSymbol());
             $amount = $transaction->getAmount();
             $total = $transaction->getPrice() * $amount;
