@@ -17,7 +17,7 @@ CryptoApp is a terminal based PHP application that allows you as a registered us
 1. Clone the repository:
 
     ```sh
-    git clone https://github.com/smitens/CRYPTOAPP.git
+    git clone https://github.com/smitens/CRYPTOAPP/tree/V4.git
     ```
    ```sh
     Create a .env file in the root directory and add your CoinMarketCap API key. Find example in .env.example file.
