@@ -1,4 +1,5 @@
 <?php
+
 namespace CryptoApp\Models;
 
 class Currency

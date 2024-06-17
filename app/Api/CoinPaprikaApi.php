@@ -7,7 +7,6 @@ use CryptoApp\Exceptions\NoSuchCurrencyException;
 use CryptoApp\Models\Currency;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use Exception;
 
 class CoinPaprikaApi implements ApiClientInterface
 {

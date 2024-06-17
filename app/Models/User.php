@@ -19,8 +19,6 @@ class User
         $this->id = $id ?? Uuid::uuid4()->toString();;
         $this->username = $username;
         $this->password = $password;
-
-
     }
 
     public function getId(): string
