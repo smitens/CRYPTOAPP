@@ -1,16 +1,15 @@
 # CryptoApp
 
-CryptoApp is a terminal based PHP application that allows you to manage and trade cryptocurrencies with virtual money using data of your choice from one of three service - CoinMarketCap API, CoinPaprika API, CoinGecko API. You can list the top cryptocurrencies, search for specific cryptocurrencies by their ticker symbol, buy and sell cryptocurrencies, display the current state of your wallet, and view your transaction history. All transactions are saved - you can choose to save them in a JSON file or SQLite DB for persistence.
+CryptoApp is a terminal based PHP application that allows you as a registered user to manage and trade cryptocurrencies with virtual money using data of your choice from one of three services - CoinMarketCap API, CoinPaprika API, CoinGecko API. You can list the top cryptocurrencies, search for specific cryptocurrencies by their ticker symbol, buy and sell cryptocurrencies, display the current state of your wallet, and view your transaction history. All users (also user wallets) and transactions are saved in SQLite DB for persistence.
 
 ## Features
 
-- Choose data source
-- Choose way of transaction data saving 
+- Register and login
 - List top cryptocurrencies
 - Search cryptocurrency by ticker symbol
 - Purchase cryptocurrency using virtual money (starting with $1000 as the base)
 - Sell cryptocurrency
-- Display the current state of your wallet based on transaction history
+- Display the current state of your wallet (including profitability) based on transaction history
 - Display the transaction list
 
 ## Installation
@@ -21,12 +20,7 @@ CryptoApp is a terminal based PHP application that allows you to manage and trad
     git clone https://github.com/smitens/CRYPTOAPP.git
     ```
    ```sh
-   Install dependencies using Composer:
-   composer install
-   ```
-   ```sh
-    Create a .env file in the root directory and add your CoinMarketCap API key:
-    APIKEY=your_api_key_here
+    Create a .env file in the root directory and add your CoinMarketCap API key. Find example in .env.example file.
     ```
    ```sh
     If you choose CoinPaprika or CoinGecko as datasource, no API key will be required
@@ -38,7 +32,8 @@ CryptoApp is a terminal based PHP application that allows you to manage and trad
     composer install
     ```
    ```sh
-    Make sure you have transactions.json file created in main project directory and storage directory created with database.sqlite in it
+    data storage directory with database.sqlite file in it will be created after you run the application 
+    (existing storage directory with test data file added in repository as an example)
     ```
 
 ## Usage

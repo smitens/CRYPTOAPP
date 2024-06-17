@@ -3,6 +3,7 @@
 namespace CryptoApp\Api;
 
 use CryptoApp\Exceptions\HttpFailedRequestException;
+use CryptoApp\Exceptions\NoSuchCurrencyException;
 use CryptoApp\Models\Currency;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
@@ -75,7 +76,7 @@ class CoinPaprikaApi implements ApiClientInterface
             }
 
             if ($coinId === null) {
-                throw new Exception('Coin not found');
+                throw new NoSuchCurrencyException('Coin with symbol ' . $symbol . ' not found.');
             }
 
             $response = $this->client->request('GET', 'tickers/' . $coinId);

@@ -3,6 +3,7 @@
 namespace CryptoApp\Api;
 
 use CryptoApp\Exceptions\HttpFailedRequestException;
+use CryptoApp\Exceptions\NoSuchCurrencyException;
 use CryptoApp\Models\Currency;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
@@ -81,7 +82,7 @@ class CoinGeckoApi implements ApiClientInterface
                 }
 
                 if ($coinId === null) {
-                    throw new \Exception('Coin with symbol ' . $symbol . ' not found.');
+                    throw new NoSuchCurrencyException('Coin with symbol ' . $symbol . ' not found.');
                 }
 
                 $coinResponse = $this->client->request('GET', 'coins/' . $coinId, [
