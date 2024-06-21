@@ -1,6 +1,6 @@
 <?php
 
-namespace CryptoApp\Api;
+namespace CryptoApp\Repositories\Currency;
 
 use CryptoApp\Exceptions\HttpFailedRequestException;
 use CryptoApp\Exceptions\NoSuchCurrencyException;
@@ -8,7 +8,7 @@ use CryptoApp\Models\Currency;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 
-class CoinPaprikaApi implements ApiClientInterface
+class CoinPaprikaApiCurrencyRepository implements CurrencyRepository
 {
     private Client $client;
 
@@ -20,7 +20,7 @@ class CoinPaprikaApi implements ApiClientInterface
         ]);
     }
 
-    public function getTopCryptoCurrencies(int $limit = 10): array
+    public function getTop(int $limit = 10): array
     {
         try {
             $response = $this->client->request('GET', 'coins');
@@ -55,7 +55,7 @@ class CoinPaprikaApi implements ApiClientInterface
         }
     }
 
-    public function searchCryptoCurrencies(string $symbol): Currency
+    public function search(string $symbol): Currency
     {
         try {
             $response = $this->client->request('GET', 'coins');

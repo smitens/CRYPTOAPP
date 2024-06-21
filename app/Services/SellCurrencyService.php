@@ -2,8 +2,10 @@
 
 namespace CryptoApp\Services;
 
-use CryptoApp\Api\ApiClientInterface;
-use CryptoApp\Database\DatabaseInterface;
+use CryptoApp\Repositories\Currency\CurrencyRepository;
+use CryptoApp\Repositories\User\UserRepository;
+use CryptoApp\Repositories\Wallet\WalletRepository;
+use CryptoApp\Repositories\Transaction\TransactionRepository;
 use CryptoApp\Exceptions\InsufficientCryptoAmountException;
 use CryptoApp\Exceptions\UserNotFoundException;
 use CryptoApp\Exceptions\WalletNotFoundException;
@@ -14,20 +16,26 @@ use Exception;
 
 class SellCurrencyService {
 
-    private ApiClientInterface $apiClient;
-    private DatabaseInterface $database;
+    private CurrencyRepository $currencyRepository;
+    private TransactionRepository $transactionRepository;
+    private WalletRepository $walletRepository;
+    private UserRepository $userRepository;
     private WalletService $walletService;
     private string $userId;
 
     public function __construct(
-        ApiClientInterface $apiClient,
-        DatabaseInterface $database,
+        CurrencyRepository $currencyRepository,
+        TransactionRepository  $transactionRepository,
+        WalletRepository $walletRepository,
+        UserRepository $userRepository,
         WalletService $walletService,
         string $userId
     )
     {
-        $this->apiClient = $apiClient;
-        $this->database = $database;
+        $this->currencyRepository = $currencyRepository;
+        $this->transactionRepository = $transactionRepository;
+        $this->walletRepository = $walletRepository;
+        $this->userRepository = $userRepository;
         $this->walletService = $walletService;
         $this->userId = $userId;
     }
@@ -35,13 +43,13 @@ class SellCurrencyService {
     public function execute (string $symbol, float $amount): void
     {
         try {
-            $user = $this->database->getUserById($this->userId);
+            $user = $this->userRepository->getById($this->userId);
             if (!$user) {
                 throw new UserNotFoundException("User with ID {$this->userId} not found.");
             }
 
-            $currency = $this->apiClient->searchCryptoCurrencies($symbol);
-            $wallet = $this->database->getWallet($this->userId);
+            $currency = $this->currencyRepository->search($symbol);
+            $wallet = $this->walletRepository->get($this->userId);
             if (!$wallet) {
                 throw new WalletNotFoundException("User's wallet not found.");
             }
@@ -60,11 +68,11 @@ class SellCurrencyService {
                 $currency->getPrice(),
                 $timestamp,
             );
-            $this->database->saveTransaction($transaction);
+            $this->transactionRepository->save($transaction);
 
             $newBalance = $currentBalance + ($currency->getPrice() * $amount);
             $updatedWallet = new Wallet($this->userId, $newBalance);
-            $this->database->updateWallet($updatedWallet);
+            $this->walletRepository->update($updatedWallet);
 
             echo "Successfully sold $amount $symbol.\n";
 

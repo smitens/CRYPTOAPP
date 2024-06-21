@@ -1,13 +1,13 @@
 <?php
 
-namespace CryptoApp\Api;
+namespace CryptoApp\Repositories\Currency;
 
 use CryptoApp\Exceptions\HttpFailedRequestException;
 use CryptoApp\Models\Currency;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 
-class CoinMarketApi implements ApiClientInterface
+class CoinMarketApiCurrencyRepository implements CurrencyRepository
 {
     private Client $client;
     private string $apiKey;
@@ -21,7 +21,7 @@ class CoinMarketApi implements ApiClientInterface
         $this->apiKey = $apiKey;
     }
 
-    public function getTopCryptoCurrencies(int $limit = 10): array
+    public function getTop(int $limit = 10): array
     {
         try {
             $response = $this->client->request('GET', 'cryptocurrency/listings/latest', [
@@ -74,7 +74,7 @@ class CoinMarketApi implements ApiClientInterface
         }
     }
 
-    public function searchCryptoCurrencies(string $symbol): Currency
+    public function search(string $symbol): Currency
     {
         try {
             $response = $this->client->request('GET', 'cryptocurrency/quotes/latest', [

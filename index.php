@@ -2,15 +2,19 @@
 
 require_once 'vendor/autoload.php';
 
-use CryptoApp\Api\CoinMarketApi;
-use CryptoApp\Database\SqliteDatabase;
+use CryptoApp\Exceptions\TransactionFailedException;
+use CryptoApp\Exceptions\TransactionGetException;
+use CryptoApp\Models\Wallet;
+use CryptoApp\Repositories\Currency\CoinGeckoApiCurrencyRepository;
+use CryptoApp\Repositories\Currency\CoinMarketApiCurrencyRepository;
+use CryptoApp\Repositories\Currency\CoinPaprikaApiCurrencyRepository;
+use CryptoApp\Repositories\Transaction\SqliteTransactionRepository;
+use CryptoApp\Repositories\User\SqliteUserRepository;
+use CryptoApp\Repositories\Wallet\SqliteWalletRepository;
 use CryptoApp\Services\BuyCurrencyService;
 use CryptoApp\Services\SellCurrencyService;
 use CryptoApp\Services\UserService;
 use CryptoApp\Services\WalletService;
-use CryptoApp\Models\Wallet;
-use CryptoApp\Exceptions\TransactionGetException;
-use CryptoApp\Exceptions\TransactionFailedException;
 use Dotenv\Dotenv;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\ConsoleOutput;
@@ -20,10 +24,12 @@ $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 $apiKey = $_ENV['APIKEY'];
-$api = new CoinMarketApi($apiKey);
-$database = new SqliteDatabase();
+$currencyRepository = new CoinMarketApiCurrencyRepository($apiKey);
+$transactionRepository = new SqliteTransactionRepository();
+$walletRepository = new SqliteWalletRepository();
+$userRepository = new SqliteUserRepository();
 
-$userService = new UserService($database);
+$userService = new UserService($userRepository);
 
 $userId = null;
 
@@ -69,18 +75,29 @@ while (true) {
 }
 
 $initialBalance = 1000.0;
-$walletData = $database->getWallet($userId);
+$walletData = $walletRepository->get($userId);
 if (!$walletData) {
     $wallet = new Wallet($userId, $initialBalance);
-    $database->saveWallet($wallet);
-    $walletData = $database->getWallet($userId);
+    $walletRepository->save($wallet);
+    $walletData = $walletRepository->get($userId);
 }
 $wallet = new Wallet($walletData['user_id'], $walletData['balance']);
 
 
-$walletService = new WalletService($wallet, $database, $api, $userId);
-$buyService = new BuyCurrencyService($api, $database, $userId);
-$sellService = new SellCurrencyService($api, $database, $walletService, $userId);
+$walletService = new WalletService($wallet, $walletRepository, $transactionRepository, $currencyRepository, $userId);
+$buyService = new BuyCurrencyService(
+    $currencyRepository,
+    $transactionRepository,
+    $walletRepository,
+    $userRepository,
+    $userId);
+$sellService = new SellCurrencyService(
+    $currencyRepository,
+    $transactionRepository,
+    $walletRepository,
+    $userRepository,
+    $walletService,
+    $userId);
 
 echo "\n\033[1m\033[4mCRYPTO CURRENCY APP\033[0m\n\n";
 
@@ -104,7 +121,7 @@ while (true) {
     switch ($choice) {
         case 1:
             try {
-                $topCryptos = $api->getTopCryptoCurrencies();
+                $topCryptos = $currencyRepository->getTop();
                 $output = new ConsoleOutput();
                 $table = new Table($output);
                 $table->setHeaders(['Rank', 'Name', 'Symbol', 'Price']);
@@ -126,7 +143,7 @@ while (true) {
         case 2:
             try {
                 $symbol = strtoupper(trim(readline("Enter the symbol: ")));
-                $currencyInfo = $api->searchCryptoCurrencies($symbol);
+                $currencyInfo = $currencyRepository->search($symbol);
                 echo "Currency Name: " . $currencyInfo->getName() . "\n";
                 echo "Currency Symbol: " . $currencyInfo->getSymbol() . "\n";
                 echo "Current Price (USD): " . number_format($currencyInfo->getPrice(), 8) . "\n";
@@ -140,7 +157,7 @@ while (true) {
                 $symbol = strtoupper(trim(readline("Enter the symbol to buy: ")));
                 $amount = floatval(trim(readline("Enter the amount to buy: ")));
                 $balance = $walletService->getBalance();
-                $cryptoData = $api->searchCryptoCurrencies($symbol);
+                $cryptoData = $currencyRepository->search($symbol);
                 $price = $cryptoData->getPrice();
                 $totalCost = $price * $amount;
 
@@ -170,7 +187,7 @@ while (true) {
                 $table = new Table($output);
                 $table->setHeaders(['Type', 'Symbol', 'Amount', 'Price', 'Timestamp']);
 
-                $transactions = $database->getTransactionsByUserId($userId);
+                $transactions = $transactionRepository->getByUserId($userId);
                 foreach ($transactions as $transaction) {
                     $table->addRow([
                         $transaction->getType(),

@@ -1,18 +1,20 @@
 <?php
 
-namespace CryptoApp\Api;
+namespace CryptoApp\Repositories\Currency;
 
 use CryptoApp\Exceptions\HttpFailedRequestException;
 use CryptoApp\Exceptions\NoSuchCurrencyException;
 use CryptoApp\Models\Currency;
 
-interface ApiClientInterface
+
+interface CurrencyRepository
 {
-    public function getTopCryptoCurrencies(int $limit = 10): array;
+    public function getTop(int $limit = 10): array;
 
     /**
      * @throws HttpFailedRequestException
      * @throws NoSuchCurrencyException
      */
-    public function searchCryptoCurrencies(string $symbol): Currency;
+    public function search(string $symbol): Currency;
+
 }
