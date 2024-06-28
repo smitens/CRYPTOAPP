@@ -39,7 +39,7 @@ class WalletService
     {
         $initialBalance = self::INITIAL_BALANCE;
 
-        $newWallet = new Wallet ($this->userId, $initialBalance);
+        $newWallet = new Wallet($this->userId, $initialBalance);
 
         $this->walletRepository->save($newWallet);
     }
@@ -48,9 +48,11 @@ class WalletService
     {
         $state = [];
         $wallet = $this->walletRepository->get($this->userId);
+
         if (!$wallet) {
             throw new WalletNotFoundException("Wallet not found for user ID: " . $this->userId);
         }
+
         $balance = $this->wallet->getBalance();
         $transactions = $this->transactionRepository->getByUserId($this->userId);
 
@@ -73,6 +75,19 @@ class WalletService
                 }
                 $state[$symbol]['amount'] -= $amount;
                 $state[$symbol]['totalSpent'] -= $total;
+            }
+        }
+
+        foreach ($state as $symbol => &$data) {
+            if ($symbol !== 'balance') {
+                $amount = $data['amount'];
+                $totalSpent = $data['totalSpent'];
+                $avgPurchasePrice = $totalSpent / $amount;
+                $currentPrice = $this->currencyRepository->search($symbol)->getPrice();
+                $profitLoss = (($currentPrice - $avgPurchasePrice) / $avgPurchasePrice) * 100;
+
+                $data['currentPrice'] = $currentPrice;
+                $data['profitLoss'] = $profitLoss;
             }
         }
 
@@ -114,8 +129,8 @@ class WalletService
                 $amount = $data['amount'];
                 $totalSpent = $data['totalSpent'];
                 $avgPurchasePrice = $totalSpent / $amount;
-                $currentPrice = $this->currencyRepository->search($symbol)->getPrice();
-                $profitLoss = (($currentPrice - $avgPurchasePrice) / $avgPurchasePrice) * 100;
+                $currentPrice = $data['currentPrice'];
+                $profitLoss = $data['profitLoss'];
 
                 $table->addRow([
                     $symbol,
@@ -129,6 +144,5 @@ class WalletService
 
         $table->render();
         $output->writeln("Balance: $" . number_format($state['balance'], 2));
-        echo "\n";
     }
 }

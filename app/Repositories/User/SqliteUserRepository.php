@@ -2,7 +2,6 @@
 
 namespace CryptoApp\Repositories\User;
 
-use CryptoApp\Exceptions\DatabaseException;
 use CryptoApp\Exceptions\UserNotFoundException;
 use CryptoApp\Exceptions\UserSaveException;
 use CryptoApp\Models\User;
@@ -19,24 +18,6 @@ class SqliteUserRepository implements UserRepository
             'database_type' => 'sqlite',
             'database_name' => $databaseFile,
         ]);
-
-        $this->createTable();
-    }
-
-
-    private function createTable(): void
-    {
-        try {
-            $this->database->exec('CREATE TABLE IF NOT EXISTS users (
-                id TEXT PRIMARY KEY,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
-            )');
-
-        } catch (Exception $e) {
-            throw new DatabaseException("Error creating table: " . $e->getMessage());
-
-        }
     }
 
     public function save(User $user): void
@@ -75,5 +56,4 @@ class SqliteUserRepository implements UserRepository
         }
         return $userData;
     }
-
 }

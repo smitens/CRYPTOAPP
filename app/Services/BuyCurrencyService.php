@@ -75,12 +75,11 @@ class BuyCurrencyService
             $updatedWallet = new Wallet($this->userId, $newBalance);
             $this->walletRepository->update($updatedWallet);
 
-            echo "Successfully bought $amount $symbol.\n";
 
         } catch (UserNotFoundException|WalletNotFoundException|InsufficientBalanceException $e) {
-            echo "Error: " . $e->getMessage();
+            throw $e;
         } catch (Exception $e) {
-            echo "An unexpected error occurred: " . $e->getMessage();
+            throw new Exception("An unexpected error occurred: " . $e->getMessage());
         }
     }
 }

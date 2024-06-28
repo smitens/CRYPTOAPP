@@ -2,7 +2,6 @@
 
 namespace CryptoApp\Repositories\Transaction;
 
-use CryptoApp\Exceptions\DatabaseException;
 use CryptoApp\Exceptions\TransactionGetException;
 use CryptoApp\Exceptions\TransactionSaveException;
 use CryptoApp\Models\Transaction;
@@ -19,29 +18,6 @@ class SqliteTransactionRepository implements TransactionRepository
             'database_type' => 'sqlite',
             'database_name' => $databaseFile,
         ]);
-
-        $this->createTable();
-    }
-
-
-    private function createTable(): void
-    {
-        try {
-            $this->database->exec('CREATE TABLE IF NOT EXISTS transactions (
-                id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                type TEXT NOT NULL,
-                symbol TEXT NOT NULL,
-                amount REAL NOT NULL,
-                price REAL NOT NULL,
-                timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )');
-
-        } catch (Exception $e) {
-            throw new DatabaseException("Error creating table: " . $e->getMessage());
-
-        }
     }
 
     public function save(Transaction $transaction): void

@@ -2,7 +2,6 @@
 
 namespace CryptoApp\Repositories\Wallet;
 
-use CryptoApp\Exceptions\DatabaseException;
 use CryptoApp\Exceptions\UserSaveException;
 use CryptoApp\Exceptions\WalletNotFoundException;
 use CryptoApp\Exceptions\WalletUpdateException;
@@ -20,25 +19,6 @@ class SqliteWalletRepository implements WalletRepository
             'database_type' => 'sqlite',
             'database_name' => $databaseFile,
         ]);
-
-        $this->createTable();
-    }
-
-
-    private function createTable(): void
-    {
-        try {
-            $this->database->exec('CREATE TABLE IF NOT EXISTS wallets (
-                id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                balance REAL NOT NULL,
-                FOREIGN KEY (user_id) REFERENCES users (id)
-            )');
-
-        } catch (Exception $e) {
-            throw new DatabaseException("Error creating table: " . $e->getMessage());
-
-        }
     }
 
     public function save(Wallet $wallet): void

@@ -3,6 +3,7 @@
 namespace CryptoApp\Repositories\Currency;
 
 use CryptoApp\Exceptions\HttpFailedRequestException;
+use CryptoApp\Exceptions\NoSuchCurrencyException;
 use CryptoApp\Models\Currency;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
@@ -89,9 +90,16 @@ class CoinMarketApiCurrencyRepository implements CurrencyRepository
 
             $data = json_decode($response->getBody(), true);
 
+
             if ($response->getStatusCode() !== 200) {
                 throw new HttpFailedRequestException(
                     'Failed to get data from CoinMarketCap. Status Code: ' . $response->getStatusCode());
+            }
+
+            if (!isset($data['data'][$symbol])) {
+                throw new NoSuchCurrencyException (
+                    'Currency with symbol \'' . $symbol . '\' not found in the response.'
+                );
             }
                 $coinDetail = $data['data'][$symbol];
                 return new Currency(

@@ -74,12 +74,10 @@ class SellCurrencyService {
             $updatedWallet = new Wallet($this->userId, $newBalance);
             $this->walletRepository->update($updatedWallet);
 
-            echo "Successfully sold $amount $symbol.\n";
-
         } catch (UserNotFoundException|WalletNotFoundException|InsufficientCryptoAmountException $e) {
-            echo "Error: " . $e->getMessage();
+            throw $e;
         } catch (Exception $e) {
-            echo "An unexpected error occurred: " . $e->getMessage();
+            throw new Exception("An unexpected error occurred: " . $e->getMessage());
         }
     }
 }
