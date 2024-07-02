@@ -10,6 +10,9 @@ use CryptoApp\Controllers\TransactionController;
 use CryptoApp\Controllers\WalletController;
 use CryptoApp\Controllers\OptionController;
 use CryptoApp\Controllers\UserController;
+use CryptoApp\Controllers\CurrencyController;
+use CryptoApp\Response;
+use CryptoApp\RedirectResponse;
 use CryptoApp\Models\User;
 use CryptoApp\Models\Wallet;
 use CryptoApp\Repositories\Currency\CoinMarketApiCurrencyRepository;
@@ -38,7 +41,23 @@ $dotenv->load();
 
 $container = new Container();
 
-$container->set(CurrencyRepository::class, function(Container $container) {
+$container->set('Symfony\Component\HttpFoundation\Session\SessionInterface', function () {
+    $session = new Session();
+    $session->start();
+    return $session;
+});
+
+$container->set(SqliteUserRepository::class, function() {
+    return new SqliteUserRepository();
+});
+
+$container->set(UserService::class, function(Container $container) {
+    return new UserService(
+        $container->get(SqliteUserRepository::class),
+    );
+});
+
+$container->set(CurrencyRepository::class, function() {
     return new CoinMarketApiCurrencyRepository($_ENV['APIKEY']);
 });
 
@@ -51,21 +70,17 @@ $container->set(WalletRepository::class, function() {
 });
 
 $container->set(WalletService::class, function(Container $container) {
+    $walletRepository = $container->get(WalletRepository::class);
+    $transactionRepository = $container->get(TransactionRepository::class);
+    $currencyRepository = $container->get(CurrencyRepository::class);
     $session = $container->get(SessionInterface::class);
     $userId = getUserIdFromSession($session);
-
-    if (!$userId) {
-
-        throw new \Exception('User not authenticated.');
-    }
-
-    $wallet = new Wallet($userId, 1000.0);
-
+    $wallet = new Wallet($userId, WalletService::INITIAL_BALANCE);
     return new WalletService(
         $wallet,
-        $container->get(WalletRepository::class),
-        $container->get(TransactionRepository::class),
-        $container->get(CurrencyRepository::class),
+        $walletRepository,
+        $transactionRepository,
+        $currencyRepository,
         $userId
     );
 });
@@ -91,14 +106,18 @@ $container->set(BuyCurrencyService::class, function(Container $container) {
     );
 });
 
+$container->set(CurrencyController::class, function(Container $container) {
+    return new CurrencyController(
+        $container->get(BuyCurrencyService::class),
+        $container->get(SellCurrencyService::class),
+        $container->get(CurrencyRepository::class),
+    );
+});
+
 $container->set(TransactionController::class, function(Container $container) {
     return new TransactionController(
         $container->get(BuyCurrencyService::class),
         $container->get(SellCurrencyService::class),
-        $container->get(TransactionRepository::class),
-        $container->get(SessionInterface::class),
-        $container->get(CurrencyRepository::class),
-        $container->get(WalletService::class)
     );
 });
 
@@ -126,23 +145,7 @@ $container->set(OptionController::class, function(Container $container) {
 });
 
 
-$container->set('Symfony\Component\HttpFoundation\Session\SessionInterface', function () {
-    $session = new Session();
-    $session->start();
-    return $session;
-});
-
-$container->set(SqliteUserRepository::class, function() {
-    return new SqliteUserRepository();
-});
-
-$container->set(UserService::class, function(Container $container) {
-    return new UserService(
-        $container->get(SqliteUserRepository::class),
-    );
-});
-
-$container->set('routes', require __DIR__ . '/app/routes.php');
+$container->set('routes', require __DIR__ . '/routes.php');
 
 $loader = new FilesystemLoader(__DIR__ . '/templates');
 $twig = new Environment($loader);
@@ -163,7 +166,8 @@ $uri = rawurldecode($uri);
 
 $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 
-function getUserIdFromSession(SessionInterface $session): ?string {
+function getUserIdFromSession(SessionInterface $session): ?string
+{
     if ($session->has('user')) {
         /** @var User $user */
         $user = $session->get('user');
@@ -172,8 +176,16 @@ function getUserIdFromSession(SessionInterface $session): ?string {
     return null;
 }
 
-function renderTemplate(Environment $twig, array $result): void {
-    echo $twig->render($result['template'], $result['data']);
+function handleResponse(Environment $twig, $response): void
+{
+    if ($response instanceof Response) {
+        echo $twig->render($response->getTemplate(), $response->getData());
+    } elseif ($response instanceof RedirectResponse) {
+        header('Location: ' . $response->getLocation());
+        exit();
+    } else {
+        throw new Exception('Unexpected response type.');
+    }
 }
 
 switch ($routeInfo[0]) {
@@ -198,27 +210,11 @@ switch ($routeInfo[0]) {
 
         if (method_exists($controllerInstance, $methodName)) {
 
-            if ($controllerName === 'CurrencyController' && $methodName === 'searchCurrency') {
-                $result = $controllerInstance->{$methodName}($request, $vars);
-            } elseif ($controllerName === 'UserController' && $methodName === 'login') {
-                $result = $controllerInstance->{$methodName}($request);
-            } elseif ($controllerName === 'UserController' && $methodName === 'register') {
-                $result = $controllerInstance->{$methodName}($request);
-            } elseif ($controllerName === 'TransactionController' && $methodName === 'displayTransactions') {
-                $result = $controllerInstance->{$methodName}($request);
-            } elseif ($controllerName === 'TransactionController' && $methodName === 'buy') {
-                $result = $controllerInstance->{$methodName}($request);
-            } elseif ($controllerName === 'TransactionController' && $methodName === 'sell') {
-                $result = $controllerInstance->{$methodName}($request);
-            } elseif ($controllerName === 'WalletController' && $methodName === 'displayWallet') {
-                $result = $controllerInstance->{$methodName}($request);
-            } else {
-                $result = $controllerInstance->{$methodName}($vars);
-            }
+            $result = $controllerInstance->{$methodName}($request, $vars);
         } else {
             throw new Exception("Method $methodName not found in $controllerClass");
         }
 
-        renderTemplate($twig, $result);
+        handleResponse($twig, $result);
         break;
 }

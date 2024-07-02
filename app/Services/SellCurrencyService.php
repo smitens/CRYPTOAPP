@@ -57,7 +57,7 @@ class SellCurrencyService {
             $existingAmount = $this->walletService->getExistingAmountInWallet($symbol);
 
             if ($existingAmount < $amount) {
-                throw new InsufficientCryptoAmountException("User does not have enough $symbol to sell.");
+                throw new InsufficientCryptoAmountException("Not enough $symbol to sell.");
             }
             $timestamp = Carbon::now();
             $transaction = new Transaction(

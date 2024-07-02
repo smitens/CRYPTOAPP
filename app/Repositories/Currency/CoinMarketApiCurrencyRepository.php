@@ -77,12 +77,15 @@ class CoinMarketApiCurrencyRepository implements CurrencyRepository
 
     public function search(string $symbol): Currency
     {
+
         try {
-            $response = $this->client->request('GET', 'cryptocurrency/quotes/latest', [
-                'query' => [
-                    'symbol' => $symbol,
-                    'convert' => 'USD'
-                ],
+
+            $query = http_build_query([
+                'symbol' => $symbol,
+                'convert' => 'USD'
+            ]);
+
+            $response = $this->client->request('GET', 'cryptocurrency/quotes/latest?' . $query, [
                 'headers' => [
                     'X-CMC_PRO_API_KEY' => $this->apiKey,
                 ],

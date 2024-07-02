@@ -3,19 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}CryptoApp{% endblock %}</title>
+    <title>CryptoApp Options</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .content-wrapper {
-            margin-top: 20px;
+        .options-list {
+            margin-top: 50px;
         }
-        footer {
-            background-color: #f8f9fa;
-            padding: 20px 0;
+        .options-list li {
+            margin: 15px 0;
+        }
+        .options-list a {
+            font-size: 1.2em;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            padding: 15px;
+            border-radius: 5px;
+            display: block;
             text-align: center;
-            position: fixed;
-            width: 100%;
-            bottom: 0;
+            text-decoration: none;
+        }
+        .options-list a:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
@@ -23,7 +32,8 @@
 <header>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="/">CryptoApp</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
@@ -31,20 +41,19 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/logout">Logout</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/options">Back to options</a>
-                </li>
             </ul>
         </div>
     </nav>
 </header>
 
 <main class="container">
-    {% block content %}
-        <div class="content-wrapper">
-
-        </div>
-    {% endblock %}
+    <div class="options-list text-center">
+        <ul class="list-unstyled">
+            <li><a href="/top-currencies" class="btn btn-primary btn-lg btn-block">View Currencies</a></li>
+            <li><a href="/transactions" class="btn btn-primary btn-lg btn-block">View Transactions</a></li>
+            <li><a href="/wallet" class="btn btn-primary btn-lg btn-block">View Wallet</a></li>
+        </ul>
+    </div>
 </main>
 
 <footer class="mt-5">

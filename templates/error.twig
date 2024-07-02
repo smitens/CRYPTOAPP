@@ -1,0 +1,12 @@
+{% extends 'base.twig' %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+    <div class="alert alert-danger mt-4">
+        <h4 class="alert-heading">Error</h4>
+        <p>{{ message }}</p>
+        <hr>
+        <a href="{{ redirectLink }}" class="btn btn-primary">Go Back</a>
+    </div>
+{% endblock %}

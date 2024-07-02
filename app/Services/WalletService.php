@@ -12,7 +12,7 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 
 class WalletService
 {
-    private const INITIAL_BALANCE = 1000.0;
+    public const INITIAL_BALANCE = 1000.0;
 
     private Wallet $wallet;
     private WalletRepository $walletRepository;

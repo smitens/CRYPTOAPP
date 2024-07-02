@@ -1,0 +1,35 @@
+{% extends 'transactions/base.twig' %}
+
+{% block title %}Your Transactions - CryptoApp{% endblock %}
+
+{% block content %}
+    <h1>Your Transactions</h1>
+
+
+<div class="table-responsive">
+    <table class="table table-striped table-bordered">
+        <thead>
+        <tr>
+            <th>Type</th>
+            <th>Symbol</th>
+            <th>Amount</th>
+            <th>Price</th>
+            <th>Timestamp</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for transaction in transactions %}
+        <tr>
+            <td>{{ transaction.getType() }}</td>
+            <td>{{ transaction.getSymbol() }}</td>
+            <td>{{ transaction.getAmount() }}</td>
+            <td>{{ transaction.getPrice() }}</td>
+            <td>{{ transaction.getTimestamp().format('Y-m-d H:i:s') }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+    </div>
+{% endblock %}
+

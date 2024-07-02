@@ -3,6 +3,7 @@
 namespace CryptoApp\Controllers;
 
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use CryptoApp\Response;
 
 class OptionController
 {
@@ -13,27 +14,21 @@ class OptionController
         $this->session = $session;
     }
 
-    public function options(): array
+    public function options(): Response
     {
         if (!$this->session->has('user')) {
-            return [
-                'template' => 'login.twig',
-                'data' => [
-                    'message' => 'Please log in to access options.'
-                ]
-            ];
+            return new Response('login.twig', [
+                'message' => 'Please log in to access options.'
+            ]);
         }
 
         $user = $this->session->get('user');
 
-        $template = 'OptionsList.twig';
+        $template = 'options.twig';
 
-        return [
-            'template' => $template,
-            'data' => [
-                'user' => $user,
-                'message' => 'Welcome to options!',
-            ],
-        ];
+        return new Response($template, [
+            'user' => $user,
+            'message' => 'Welcome to options!',
+        ]);
     }
 }

@@ -2,9 +2,11 @@
 
 namespace CryptoApp\Controllers;
 
+use CryptoApp\Response;
+
 class IndexController
 {
-    public function index(): array
+    public function index(): Response
     {
         $template = 'index.twig';
         $data = [
@@ -12,9 +14,6 @@ class IndexController
             'message' => 'Welcome to CryptoApp!',
         ];
 
-        return [
-            'template' => $template,
-            'data' => $data,
-        ];
+        return new Response($template, $data);
     }
 }

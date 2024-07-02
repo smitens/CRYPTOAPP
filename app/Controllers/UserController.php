@@ -9,8 +9,9 @@ use CryptoApp\Models\Wallet;
 use CryptoApp\Repositories\Wallet\WalletRepository;
 use CryptoApp\Repositories\Transaction\TransactionRepository;
 use CryptoApp\Repositories\Currency\CurrencyRepository;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\Request;
+use CryptoApp\Response;
 use CryptoApp\Exceptions\UserLoginException;
 
 class UserController
@@ -35,15 +36,15 @@ class UserController
         $this->session = $session;
     }
 
-    public function showRegisterForm(): array
+    public function showRegisterForm(): Response
     {
-        return [
-            'template' => 'UserRegister.twig',
-            'data' => [],
-        ];
+        return new Response(
+            'userservice/register.twig',
+            []
+        );
     }
 
-    public function register(Request $request): array
+    public function register(Request $request): Response
     {
         try {
             $username = $request->request->get('username');
@@ -65,27 +66,27 @@ class UserController
 
             $walletService->createWallet();
 
-            return [
-                'template' => 'UserRegisterSuccess.twig',
-                'data' => ['message' => 'User registered successfully!'],
-            ];
+            return new Response(
+                'userservice/registersuccess.twig',
+                ['message' => 'User registered successfully!']
+            );
         } catch (UserSaveException $e) {
-            return [
-                'template' => 'UserRegister.twig',
-                'data' => ['error' => $e->getMessage()],
-            ];
+            return new Response(
+                'userservice/register.twig',
+                ['error' => $e->getMessage()]
+            );
         }
     }
 
-    public function showLoginForm(): array
+    public function showLoginForm(): Response
     {
-        return [
-            'template' => 'UserLogin.twig',
-            'data' => [],
-        ];
+        return new Response(
+            'userservice/login.twig',
+            []
+        );
     }
 
-    public function login(Request $request): array
+    public function login(Request $request): Response
     {
         $username = $request->request->get('username');
         $password = $request->request->get('password');
@@ -95,19 +96,19 @@ class UserController
 
             $this->session->set('user', $user);
 
-            return [
-                'template' => 'UserLoginSuccess.twig',
-                'data' => ['message' => 'Login successful!', 'user' => $user],
-            ];
+            return new Response(
+                'userservice/loginsuccess.twig',
+                ['message' => 'Login successful!', 'user' => $user]
+            );
         } catch (UserLoginException $e) {
-            return [
-                'template' => 'UserLogin.twig',
-                'data' => ['error' => $e->getMessage()],
-            ];
+            return new Response(
+                'userservice/login.twig',
+                ['error' => $e->getMessage()]
+            );
         }
     }
 
-    public function logout(): array
+    public function logout(): Response
     {
         $username = '';
         if ($this->session->has('user')) {
@@ -116,9 +117,9 @@ class UserController
             $this->session->clear();
         }
 
-        return [
-            'template' => 'UserLogout.twig',
-            'data' => ['username' => $username, 'message' => 'logged out successfully!'],
-        ];
+        return new Response(
+            'userservice/logout.twig',
+            ['username' => $username, 'message' => 'logged out successfully!']
+        );
     }
 }

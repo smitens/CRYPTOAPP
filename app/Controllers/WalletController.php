@@ -3,7 +3,7 @@
 namespace CryptoApp\Controllers;
 
 use CryptoApp\Services\WalletService;
-use Symfony\Component\HttpFoundation\Request;
+use CryptoApp\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class WalletController
@@ -17,15 +17,17 @@ class WalletController
         $this->session = $session;
     }
 
-    public function displayWallet(Request $request): array
+    public function index(): Response
     {
+        if (!$this->session->has('user')) {
+            return new Response('error.twig', ['message' => 'User not logged in.']);
+        }
+
         $walletState = $this->walletService->calculateWalletState();
 
-        return [
-            'template' => 'WalletState.twig',
-            'data' => [
-                'wallet' => $walletState,
-            ],
-        ];
+        return new Response(
+            'wallet\index.twig',
+            ['wallet' => $walletState]
+        );
     }
 }
