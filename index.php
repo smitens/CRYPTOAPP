@@ -2,101 +2,219 @@
 
 require_once 'vendor/autoload.php';
 
-use CryptoApp\App\ApiToData;
-use CryptoApp\App\Transactions;
-use CryptoApp\App\Wallet;
-use Symfony\Component\Console\Helper\Table;
-use Symfony\Component\Console\Output\ConsoleOutput;
+use CryptoApp\Services\DatabaseInitializer;
 
-$apiKey = getenv ("COIN_MARKET_CAP_API_KEY");
-$transactionsFile = 'transactions.json';
-$api = new ApiToData($apiKey);
-$transactions = new Transactions($transactionsFile, $api);
-$wallet = new Wallet(1000, $transactions);
+new DatabaseInitializer('storage/database.sqlite');
 
-while (true) {
-    echo "\n\033[1m\033[4mCRYPTO CURRENCY APP\033[0m\n\n";
-    echo "1. Display TOP 10 crypto currencies\n";
-    echo "2. Search for crypto currency using its symbol\n";
-    echo "3. Buy crypto currency\n";
-    echo "4. Sell crypto currency\n";
-    echo "5. Display list of transactions\n";
-    echo "6. Display current state of Wallet\n";
-    echo "7. Exit\n";
-    echo "\n";
-    echo "Enter the number of your choice: ";
-    $choice = trim (fgets(STDIN));
+use CryptoApp\Controllers\TransactionController;
+use CryptoApp\Controllers\WalletController;
+use CryptoApp\Controllers\OptionController;
+use CryptoApp\Controllers\UserController;
+use CryptoApp\Controllers\CurrencyController;
+use CryptoApp\Response;
+use CryptoApp\RedirectResponse;
+use CryptoApp\Models\User;
+use CryptoApp\Models\Wallet;
+use CryptoApp\Repositories\Currency\CoinMarketApiCurrencyRepository;
+use CryptoApp\Repositories\Currency\CurrencyRepository;
+use CryptoApp\Repositories\Transaction\SqliteTransactionRepository;
+use CryptoApp\Repositories\Transaction\TransactionRepository;
+use CryptoApp\Repositories\User\SqliteUserRepository;
+use CryptoApp\Repositories\Wallet\SqliteWalletRepository;
+use CryptoApp\Repositories\Wallet\WalletRepository;
+use CryptoApp\Services\BuyCurrencyService;
+use CryptoApp\Services\SellCurrencyService;
+use CryptoApp\Services\UserService;
+use CryptoApp\Services\WalletService;
+use DI\Container;
+use Dotenv\Dotenv;
+use FastRoute\RouteCollector;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Twig\Environment;
+use Twig\Loader\FilesystemLoader;
 
-    switch ($choice) {
-        case 1:
-            try {
-            $topCryptos = $api->getTopCryptoCurrencies();
-            $output = new ConsoleOutput();
-            $table = new Table($output);
-            $table->setHeaders(['Rank', 'Name', 'Symbol', 'Price', 'Market Cap', 'Volume (24h)']);
 
-            foreach ($topCryptos as $crypto) {
-                $table->addRow([
-                    $crypto['cmc_rank'],
-                    $crypto['name'],
-                    $crypto['symbol'],
-                    number_format($crypto['quote']['USD']['price'], 8),
-                    number_format($crypto['quote']['USD']['market_cap'], 2),
-                    number_format($crypto['quote']['USD']['volume_24h'], 2),
-                ]);
-            }
-            $table->render();
-            } catch (\Exception $e) {
-                echo "An error occurred: " . $e->getMessage() . "\n";
-            }
-            break;
+$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv->load();
 
-        case 2:
-            try {
-            $symbol = trim(readline("Enter the symbol: "));
-            $currencyInfo = $api->searchCryptoCurrencies($symbol);
-            echo "Currency Name: " . $currencyInfo[$symbol]['name'] . "\n";
-            echo "Currency Symbol: " . $currencyInfo[$symbol]['symbol'] . "\n";
-            echo "Current Price (USD): " . number_format($currencyInfo[$symbol]['quote']['USD']['price'], 8) .
-                "\n";
-            } catch (\Exception $e) {
-                echo "An error occurred: " . $e->getMessage() . "\n";
-            }
-            break;
+$container = new Container();
 
-        case 3:
-            $symbol = trim(readline("Enter the symbol to buy: "));
-            $amount = floatval(trim(readline("Enter the amount to buy: ")));
-            $balance = $wallet->getBalance();
-            $cryptoData = $api->searchCryptoCurrencies($symbol);
-            $price = $cryptoData[$symbol]['quote']['USD']['price'];
-            $totalCost = $price * $amount;
-            if ($balance >= $totalCost) {
-                $transactions->buy($symbol, $amount);
-            } else {
-                echo "\033[31mInsufficient balance. Please try again with a lower amount.\033[0m\n";
-            }
-            break;
+$container->set('Symfony\Component\HttpFoundation\Session\SessionInterface', function () {
+    $session = new Session();
+    $session->start();
+    return $session;
+});
 
-        case 4:
-            $symbol = trim(readline("Enter the symbol to sell: "));
-            $amount = floatval(trim(readline("Enter the amount to sell: ")));
-            $transactions->sell($symbol, $amount);
-            break;
+$container->set(SqliteUserRepository::class, function() {
+    return new SqliteUserRepository();
+});
 
-        case 5:
-            $transactions->displayTransactions();
-            break;
+$container->set(UserService::class, function(Container $container) {
+    return new UserService(
+        $container->get(SqliteUserRepository::class),
+    );
+});
 
-        case 6:
-            $wallet->displayWalletState();
-            break;
+$container->set(CurrencyRepository::class, function() {
+    return new CoinMarketApiCurrencyRepository($_ENV['APIKEY']);
+});
 
-        case 7:
-            exit;
+$container->set(TransactionRepository::class, function() {
+    return new SqliteTransactionRepository();
+});
 
-        default:
-            echo "Invalid choice. Please try again.\n";
-            break;
+$container->set(WalletRepository::class, function() {
+    return new SqliteWalletRepository();
+});
+
+$container->set(WalletService::class, function(Container $container) {
+    $walletRepository = $container->get(WalletRepository::class);
+    $transactionRepository = $container->get(TransactionRepository::class);
+    $currencyRepository = $container->get(CurrencyRepository::class);
+    $session = $container->get(SessionInterface::class);
+    $userId = getUserIdFromSession($session);
+    $wallet = new Wallet($userId, WalletService::INITIAL_BALANCE);
+    return new WalletService(
+        $wallet,
+        $walletRepository,
+        $transactionRepository,
+        $currencyRepository,
+        $userId
+    );
+});
+
+$container->set(SellCurrencyService::class, function(Container $container) {
+    return new SellCurrencyService(
+        $container->get(CurrencyRepository::class),
+        $container->get(TransactionRepository::class),
+        $container->get(WalletRepository::class),
+        $container->get(SqliteUserRepository::class),
+        $container->get(WalletService::class),
+        getUserIdFromSession($container->get(SessionInterface::class))
+    );
+});
+
+$container->set(BuyCurrencyService::class, function(Container $container) {
+    return new BuyCurrencyService(
+        $container->get(CurrencyRepository::class),
+        $container->get(TransactionRepository::class),
+        $container->get(WalletRepository::class),
+        $container->get(SqliteUserRepository::class),
+        getUserIdFromSession($container->get(SessionInterface::class))
+    );
+});
+
+$container->set(CurrencyController::class, function(Container $container) {
+    return new CurrencyController(
+        $container->get(BuyCurrencyService::class),
+        $container->get(SellCurrencyService::class),
+        $container->get(CurrencyRepository::class),
+    );
+});
+
+$container->set(TransactionController::class, function(Container $container) {
+    return new TransactionController(
+        $container->get(BuyCurrencyService::class),
+        $container->get(SellCurrencyService::class),
+    );
+});
+
+$container->set(UserController::class, function(Container $container) {
+    return new UserController(
+        $container->get(UserService::class),
+        $container->get(WalletRepository::class),
+        $container->get(TransactionRepository::class),
+        $container->get(CurrencyRepository::class),
+        $container->get(SessionInterface::class)
+    );
+});
+
+$container->set(WalletController::class, function(Container $container) {
+    return new WalletController(
+        $container->get(WalletService::class),
+        $container->get(SessionInterface::class)
+    );
+});
+
+$container->set(OptionController::class, function(Container $container) {
+    return new OptionController(
+        $container->get(SessionInterface::class)
+    );
+});
+
+
+$container->set('routes', require __DIR__ . '/routes.php');
+
+$loader = new FilesystemLoader(__DIR__ . '/templates');
+$twig = new Environment($loader);
+
+$dispatcher = FastRoute\simpleDispatcher(function(RouteCollector $r) use ($container) {
+    foreach ($container->get('routes') as $route) {
+        $r->addRoute($route[0], $route[1], $route[2]);
     }
+});
+
+$httpMethod = $_SERVER['REQUEST_METHOD'];
+$uri = $_SERVER['REQUEST_URI'];
+
+if (false !== $pos = strpos($uri, '?')) {
+    $uri = substr($uri, 0, $pos);
+}
+$uri = rawurldecode($uri);
+
+$routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+
+function getUserIdFromSession(SessionInterface $session): ?string
+{
+    if ($session->has('user')) {
+        /** @var User $user */
+        $user = $session->get('user');
+        return $user->getId();
+    }
+    return null;
+}
+
+function handleResponse(Environment $twig, $response): void
+{
+    if ($response instanceof Response) {
+        echo $twig->render($response->getTemplate(), $response->getData());
+    } elseif ($response instanceof RedirectResponse) {
+        header('Location: ' . $response->getLocation());
+        exit();
+    } else {
+        throw new Exception('Unexpected response type.');
+    }
+}
+
+switch ($routeInfo[0]) {
+    case FastRoute\Dispatcher::NOT_FOUND:
+        http_response_code(404);
+        echo '404 Not Found';
+        break;
+    case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
+        $allowedMethods = $routeInfo[1];
+        http_response_code(405);
+        echo '405 Method Not Allowed';
+        break;
+    case FastRoute\Dispatcher::FOUND:
+        $handler = $routeInfo[1];
+        $vars = $routeInfo[2];
+        [$controllerName, $methodName] = explode('@', $handler, 2);
+
+        $controllerClass = "\\CryptoApp\\Controllers\\{$controllerName}";
+        $controllerInstance = $container->get($controllerClass);
+
+        $request = Request::createFromGlobals();
+
+        if (method_exists($controllerInstance, $methodName)) {
+
+            $result = $controllerInstance->{$methodName}($request, $vars);
+        } else {
+            throw new Exception("Method $methodName not found in $controllerClass");
+        }
+
+        handleResponse($twig, $result);
+        break;
 }

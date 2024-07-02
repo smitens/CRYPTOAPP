@@ -1,0 +1,34 @@
+{% extends 'currencies/base.twig' %}
+
+{% block title %}Your Transactions - CryptoApp{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Top Cryptocurrencies</h1>
+        <p>Click on the currency name to explore:</p>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Name</th>
+                    <th>Symbol</th>
+                    <th>Price</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for crypto in topCryptos %}
+                    <tr>
+                        <td>{{ crypto.rank }}</td>
+                        <td><a href="/top-currencies/{{ crypto.symbol }}">{{ crypto.name }}</a></td>
+                        <td>{{ crypto.symbol }}</td>
+                        <td>{{ crypto.price }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+

@@ -1,0 +1,38 @@
+{% extends 'wallet/base.twig' %}
+
+{% block title %}Your Transactions - CryptoApp{% endblock %}
+
+{% block content %}
+
+<h1>Wallet</h1>
+<p>Balance: ${{ wallet.balance | number_format(2, '.', ',') }}</p>
+
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Amount</th>
+                <th>Avg Purchase Price</th>
+                <th>Current Price</th>
+                <th>Profit/Loss (%)</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for symbol, data in wallet %}
+                {% if symbol != 'balance' %}
+                <tr>
+                    <td>{{ symbol }}</td>
+                    <td>{{ data.amount }}</td>
+                    <td>{{ (data.totalSpent / data.amount) | number_format(8) }}</td>
+                    <td>{{ data.currentPrice | number_format(8) }}</td>
+                    <td>{{ data.profitLoss | number_format(2) }}%</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    </div>
+{% endblock %}

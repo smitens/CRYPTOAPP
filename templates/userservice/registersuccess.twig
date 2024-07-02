@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Register Success - CryptoApp</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .success-container {
+            max-width: 600px;
+            margin: 100px auto;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #f9f9f9;
+        }
+        .success-container h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .success-container p {
+            text-align: center;
+        }
+        .success-container a {
+            display: block;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .success-container a:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">CryptoApp</a>
+    </nav>
+</header>
+
+<main class="container">
+    <div class="success-container">
+        <h1>{{ message }}</h1>
+        <p>Please <a href="/login">log in</a> to authorize your account and access the features of CryptoApp application.</p>
+        <a href="/" class="btn btn-primary">Return to Home Page</a>
+    </div>
+</main>
+
+<footer class="mt-5 text-center">
+    &copy; 2024 CryptoApp. All rights reserved.
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+
